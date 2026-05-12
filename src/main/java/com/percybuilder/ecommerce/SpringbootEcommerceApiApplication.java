@@ -8,6 +8,7 @@ public class SpringbootEcommerceApiApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(SpringbootEcommerceApiApplication.class, args);
+        System.out.println("App runs successfully");
     }
 
 }
