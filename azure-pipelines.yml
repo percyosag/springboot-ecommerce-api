@@ -8,6 +8,23 @@ pool:
 
 variables:
   javaVersion: '21'
+  POSTGRES_DB: 'ecommerce_test_db'
+  POSTGRES_USER: 'postgres'
+  POSTGRES_PASSWORD: 'postgres'
+
+resources:
+  containers:
+    - container: postgres
+      image: postgres:16
+      env:
+        POSTGRES_DB: $(POSTGRES_DB)
+        POSTGRES_USER: $(POSTGRES_USER)
+        POSTGRES_PASSWORD: $(POSTGRES_PASSWORD)
+      ports:
+        - 5432:5432
+
+services:
+  postgres: postgres
 
 steps:
   - task: JavaToolInstaller@0
@@ -17,8 +34,20 @@ steps:
       jdkArchitectureOption: 'x64'
       jdkSourceOption: 'PreInstalled'
 
+  - script: |
+      echo "Waiting for PostgreSQL to be ready..."
+      for i in {1..30}; do
+        pg_isready -h localhost -p 5432 -U $(POSTGRES_USER) && break
+        sleep 2
+      done
+    displayName: 'Wait for PostgreSQL'
+
   - script: mvn clean package
     displayName: 'Build, test, and package Spring Boot app'
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/$(POSTGRES_DB)
+      SPRING_DATASOURCE_USERNAME: $(POSTGRES_USER)
+      SPRING_DATASOURCE_PASSWORD: $(POSTGRES_PASSWORD)
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish packaged JAR'
