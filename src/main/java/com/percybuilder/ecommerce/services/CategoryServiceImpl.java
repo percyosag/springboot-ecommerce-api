@@ -2,6 +2,7 @@ package com.percybuilder.ecommerce.services;
 
 import com.percybuilder.ecommerce.dtos.CategoryRequest;
 import com.percybuilder.ecommerce.dtos.CategoryResponse;
+import com.percybuilder.ecommerce.exceptions.BadRequestException;
 import com.percybuilder.ecommerce.exceptions.ResourceNotFoundException;
 import com.percybuilder.ecommerce.models.Category;
 import com.percybuilder.ecommerce.repositories.CategoryRepository;
@@ -20,8 +21,13 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse createCategory(CategoryRequest categoryRequest) {
+        if (categoryRepository.existsByNameIgnoreCase(categoryRequest.getName())) {
+            throw new BadRequestException("Category already exists with name: " + categoryRequest.getName());
+        }
+
         Category category = toEntity(categoryRequest);
         Category savedCategory = categoryRepository.save(category);
+
         return toResponse(savedCategory);
     }
 
@@ -42,6 +48,12 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponse updateCategory(Long id, CategoryRequest categoryRequest) {
         Category existingCategory = findCategoryById(id);
+
+        categoryRepository.findByNameIgnoreCase(categoryRequest.getName())
+                .filter(category -> !category.getId().equals(id))
+                .ifPresent(category -> {
+                    throw new BadRequestException("Category already exists with name: " + categoryRequest.getName());
+                });
 
         existingCategory.setName(categoryRequest.getName());
         existingCategory.setDescription(categoryRequest.getDescription());

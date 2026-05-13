@@ -33,4 +33,7 @@ public class ProductRequest {
     private Integer stockQuantity;
 
     private String imageUrl;
+
+    @NotNull(message = "Category id is required")
+    private Long categoryId;
 }
