@@ -1,18 +1,20 @@
+
 package com.percybuilder.ecommerce.services;
 
-import com.percybuilder.ecommerce.models.Product;
+import com.percybuilder.ecommerce.dtos.ProductRequest;
+import com.percybuilder.ecommerce.dtos.ProductResponse;
 
 import java.util.List;
 
 public interface ProductService {
 
-    Product createProduct(Product product);
+    ProductResponse createProduct(ProductRequest productRequest);
 
-    List<Product> getAllProducts();
+    List<ProductResponse> getAllProducts();
 
-    Product getProductById(Long id);
+    ProductResponse getProductById(Long id);
 
-    Product updateProduct(Long id, Product product);
+    ProductResponse updateProduct(Long id, ProductRequest productRequest);
 
     void deleteProduct(Long id);
 }
