@@ -3,10 +3,12 @@ package com.percybuilder.ecommerce.controllers;
 import com.percybuilder.ecommerce.dtos.CategoryRequest;
 import com.percybuilder.ecommerce.dtos.CategoryResponse;
 import com.percybuilder.ecommerce.services.CategoryService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.List;
 
@@ -20,7 +22,10 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
+
+
     @PostMapping
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<CategoryResponse> createCategory(
             @Valid @RequestBody CategoryRequest categoryRequest
     ) {
@@ -39,6 +44,7 @@ public class CategoryController {
     }
 
     @PutMapping("/{id}")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<CategoryResponse> updateCategory(
             @PathVariable Long id,
             @Valid @RequestBody CategoryRequest categoryRequest
@@ -47,6 +53,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.noContent().build();
