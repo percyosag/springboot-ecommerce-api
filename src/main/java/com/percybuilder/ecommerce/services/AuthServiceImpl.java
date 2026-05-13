@@ -3,7 +3,9 @@ package com.percybuilder.ecommerce.services;
 import com.percybuilder.ecommerce.dtos.AuthResponse;
 import com.percybuilder.ecommerce.dtos.LoginRequest;
 import com.percybuilder.ecommerce.dtos.RegisterRequest;
+import com.percybuilder.ecommerce.dtos.UserProfileResponse;
 import com.percybuilder.ecommerce.exceptions.BadRequestException;
+import com.percybuilder.ecommerce.exceptions.ResourceNotFoundException;
 import com.percybuilder.ecommerce.models.AppUser;
 import com.percybuilder.ecommerce.models.Role;
 import com.percybuilder.ecommerce.models.RoleName;
@@ -88,11 +90,25 @@ public class AuthServiceImpl implements AuthService {
         return buildAuthResponse(appUser);
     }
 
+    @Override
+    public UserProfileResponse getCurrentUser(String username) {
+        AppUser appUser = appUserRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with username: " + username
+                ));
+
+        return UserProfileResponse.builder()
+                .id(appUser.getId())
+                .firstName(appUser.getFirstName())
+                .lastName(appUser.getLastName())
+                .username(appUser.getUsername())
+                .email(appUser.getEmail())
+                .roles(extractRoles(appUser))
+                .build();
+    }
+
     private AuthResponse buildAuthResponse(AppUser appUser) {
-        Set<String> roles = appUser.getRoles()
-                .stream()
-                .map(role -> role.getName().name())
-                .collect(Collectors.toSet());
+        Set<String> roles = extractRoles(appUser);
 
         String token = jwtService.generateToken(appUser.getUsername(), roles);
 
@@ -104,5 +120,12 @@ public class AuthServiceImpl implements AuthService {
                 .email(appUser.getEmail())
                 .roles(roles)
                 .build();
+    }
+
+    private Set<String> extractRoles(AppUser appUser) {
+        return appUser.getRoles()
+                .stream()
+                .map(role -> role.getName().name())
+                .collect(Collectors.toSet());
     }
 }
