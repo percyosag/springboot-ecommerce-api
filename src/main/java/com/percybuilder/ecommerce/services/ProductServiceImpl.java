@@ -2,6 +2,7 @@ package com.percybuilder.ecommerce.services;
 
 import com.percybuilder.ecommerce.dtos.ProductRequest;
 import com.percybuilder.ecommerce.dtos.ProductResponse;
+import com.percybuilder.ecommerce.exceptions.ResourceNotFoundException;
 import com.percybuilder.ecommerce.models.Product;
 import com.percybuilder.ecommerce.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
@@ -61,7 +62,7 @@ public class ProductServiceImpl implements ProductService {
 
     private Product findProductById(Long id) {
         return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
     }
 
     private Product toEntity(ProductRequest productRequest) {
