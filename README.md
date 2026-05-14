@@ -269,10 +269,11 @@ src/main/resources/application.properties
 Example:
 
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/ecommerce_db
-spring.datasource.username=your_username
-spring.datasource.password=your_password
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/springboot_ecommerce_api}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:}
 ```
+Set `SPRING_DATASOURCE_PASSWORD` in your local environment or IntelliJ run configuration instead of committing a real password.
 
 For JWT configuration:
 
@@ -280,6 +281,7 @@ For JWT configuration:
 app.jwt.secret=${JWT_SECRET:dev-secret-key-must-be-at-least-32-characters-long-for-hs256}
 app.jwt.expiration-ms=${JWT_EXPIRATION_MS:86400000}
 ```
+
 
 For optional local admin seeding:
 
@@ -293,7 +295,7 @@ app.admin.password=${APP_ADMIN_PASSWORD:}
 In IntelliJ local run configuration, you can set:
 
 ```text
-APP_ADMIN_SEED_ENABLED=true;APP_ADMIN_PASSWORD=AdminPassword123!
+APP_ADMIN_SEED_ENABLED=true;APP_ADMIN_PASSWORD=your_local_admin_password
 ```
 
 Do not commit real production secrets.
@@ -393,12 +395,6 @@ This project demonstrates:
 * Service-layer unit testing
 * Swagger/OpenAPI documentation
 * Azure DevOps CI workflow
-
----
-
-## Interview Summary
-
-This is a Spring Boot ecommerce REST API built with Java 21, PostgreSQL, Spring Data JPA, Spring Security, JWT, Swagger, and Azure DevOps CI. I built it using a layered architecture with controllers, services, repositories, DTOs, and entities. The API supports product and category management, authentication, role-based admin authorization, cart management, shipping addresses, order creation from cart, payment status handling, and service-layer unit tests. The project is documented with Swagger and automatically verified through an Azure DevOps pipeline.
 
 ---
 
