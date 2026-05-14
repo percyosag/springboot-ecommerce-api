@@ -9,12 +9,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/addresses")
 @SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Addresses", description = "Authenticated user shipping address management")
 public class AddressController {
 
     private final AddressService addressService;
@@ -22,7 +25,7 @@ public class AddressController {
     public AddressController(AddressService addressService) {
         this.addressService = addressService;
     }
-
+    @Operation(summary = "Create a shipping address")
     @PostMapping
     public ResponseEntity<AddressResponse> createAddress(
             Authentication authentication,
@@ -35,7 +38,7 @@ public class AddressController {
 
         return new ResponseEntity<>(createdAddress, HttpStatus.CREATED);
     }
-
+    @Operation(summary = "Get current user's addresses")
     @GetMapping
     public ResponseEntity<List<AddressResponse>> getUserAddresses(
             Authentication authentication
@@ -44,7 +47,7 @@ public class AddressController {
                 addressService.getUserAddresses(authentication.getName())
         );
     }
-
+    @Operation(summary = "Get address by ID")
     @GetMapping("/{id}")
     public ResponseEntity<AddressResponse> getAddressById(
             Authentication authentication,
@@ -54,7 +57,7 @@ public class AddressController {
                 addressService.getAddressById(authentication.getName(), id)
         );
     }
-
+    @Operation(summary = "Update address")
     @PutMapping("/{id}")
     public ResponseEntity<AddressResponse> updateAddress(
             Authentication authentication,
@@ -69,7 +72,7 @@ public class AddressController {
                 )
         );
     }
-
+    @Operation(summary = "Set address as default")
     @PatchMapping("/{id}/default")
     public ResponseEntity<AddressResponse> setDefaultAddress(
             Authentication authentication,
@@ -79,7 +82,7 @@ public class AddressController {
                 addressService.setDefaultAddress(authentication.getName(), id)
         );
     }
-
+    @Operation(summary = "Delete address")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAddress(
             Authentication authentication,

@@ -9,10 +9,13 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequestMapping("/api/cart")
 @SecurityRequirement(name = "bearerAuth")
+@Tag(name = "Cart", description = "Authenticated user cart management")
 public class CartController {
 
     private final CartService cartService;
@@ -20,12 +23,12 @@ public class CartController {
     public CartController(CartService cartService) {
         this.cartService = cartService;
     }
-
+    @Operation(summary = "Get current user's cart")
     @GetMapping
     public ResponseEntity<CartResponse> getCart(Authentication authentication) {
         return ResponseEntity.ok(cartService.getCart(authentication.getName()));
     }
-
+    @Operation(summary = "Add item to current user's cart")
     @PostMapping("/items")
     public ResponseEntity<CartResponse> addItemToCart(
             Authentication authentication,
@@ -35,7 +38,7 @@ public class CartController {
                 cartService.addItemToCart(authentication.getName(), cartItemRequest)
         );
     }
-
+    @Operation(summary = "Update cart item quantity")
     @PutMapping("/items/{productId}")
     public ResponseEntity<CartResponse> updateCartItem(
             Authentication authentication,
@@ -50,7 +53,7 @@ public class CartController {
                 )
         );
     }
-
+    @Operation(summary = "Remove item from cart")
     @DeleteMapping("/items/{productId}")
     public ResponseEntity<CartResponse> removeCartItem(
             Authentication authentication,
@@ -60,7 +63,7 @@ public class CartController {
                 cartService.removeCartItem(authentication.getName(), productId)
         );
     }
-
+    @Operation(summary = "Clear current user's cart")
     @DeleteMapping
     public ResponseEntity<Void> clearCart(Authentication authentication) {
         cartService.clearCart(authentication.getName());
