@@ -4,6 +4,8 @@ import com.percybuilder.ecommerce.dtos.CreateOrderRequest;
 import com.percybuilder.ecommerce.dtos.OrderItemResponse;
 import com.percybuilder.ecommerce.dtos.OrderResponse;
 import com.percybuilder.ecommerce.dtos.OrderShippingAddressResponse;
+import com.percybuilder.ecommerce.dtos.OrderStatusUpdateRequest;
+import com.percybuilder.ecommerce.dtos.PaymentRequest;
 import com.percybuilder.ecommerce.exceptions.BadRequestException;
 import com.percybuilder.ecommerce.exceptions.ResourceNotFoundException;
 import com.percybuilder.ecommerce.models.*;
@@ -11,10 +13,12 @@ import com.percybuilder.ecommerce.repositories.AddressRepository;
 import com.percybuilder.ecommerce.repositories.AppUserRepository;
 import com.percybuilder.ecommerce.repositories.CartItemRepository;
 import com.percybuilder.ecommerce.repositories.OrderRepository;
+import com.percybuilder.ecommerce.repositories.ProductRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -24,17 +28,20 @@ public class OrderServiceImpl implements OrderService {
     private final CartItemRepository cartItemRepository;
     private final AppUserRepository appUserRepository;
     private final AddressRepository addressRepository;
+    private final ProductRepository productRepository;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
             CartItemRepository cartItemRepository,
             AppUserRepository appUserRepository,
-            AddressRepository addressRepository
+            AddressRepository addressRepository,
+            ProductRepository productRepository
     ) {
         this.orderRepository = orderRepository;
         this.cartItemRepository = cartItemRepository;
         this.appUserRepository = appUserRepository;
         this.addressRepository = addressRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -54,7 +61,7 @@ public class OrderServiceImpl implements OrderService {
             throw new BadRequestException("Cannot create order from an empty cart");
         }
 
-        validateStock(cartItems);
+        validateCartStock(cartItems);
 
         BigDecimal totalAmount = calculateTotalAmount(cartItems);
 
@@ -62,6 +69,7 @@ public class OrderServiceImpl implements OrderService {
                 .appUser(appUser)
                 .totalAmount(totalAmount)
                 .status(OrderStatus.PENDING)
+                .paymentStatus(PaymentStatus.PENDING)
                 .shippingFullName(address.getFullName())
                 .shippingPhoneNumber(address.getPhoneNumber())
                 .shippingAddressLine1(address.getAddressLine1())
@@ -115,6 +123,36 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    @Transactional
+    public OrderResponse payMyOrder(String username, Long orderId, PaymentRequest paymentRequest) {
+        CustomerOrder customerOrder = orderRepository.findByIdAndAppUserUsername(orderId, username)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order not found with id: " + orderId
+                ));
+
+        if (customerOrder.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new BadRequestException("Order is already paid");
+        }
+
+        if (customerOrder.getStatus() == OrderStatus.CANCELLED) {
+            throw new BadRequestException("Cannot pay for a cancelled order");
+        }
+
+        validateOrderStock(customerOrder.getOrderItems());
+        reduceProductStock(customerOrder.getOrderItems());
+
+        customerOrder.setPaymentStatus(PaymentStatus.PAID);
+        customerOrder.setPaymentMethod(paymentRequest.getPaymentMethod());
+        customerOrder.setPaymentTransactionId(paymentRequest.getPaymentTransactionId());
+        customerOrder.setPaidAt(LocalDateTime.now());
+        customerOrder.setStatus(OrderStatus.PROCESSING);
+
+        CustomerOrder paidOrder = orderRepository.save(customerOrder);
+
+        return toResponse(paidOrder);
+    }
+
+    @Override
     public List<OrderResponse> getAllOrders() {
         return orderRepository.findAll()
                 .stream()
@@ -132,6 +170,29 @@ public class OrderServiceImpl implements OrderService {
         return toResponse(customerOrder);
     }
 
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatusForAdmin(
+            Long orderId,
+            OrderStatusUpdateRequest orderStatusUpdateRequest
+    ) {
+        CustomerOrder customerOrder = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Order not found with id: " + orderId
+                ));
+
+        if (orderStatusUpdateRequest.getStatus() == OrderStatus.DELIVERED
+                && customerOrder.getPaymentStatus() != PaymentStatus.PAID) {
+            throw new BadRequestException("Cannot mark an unpaid order as delivered");
+        }
+
+        customerOrder.setStatus(orderStatusUpdateRequest.getStatus());
+
+        CustomerOrder updatedOrder = orderRepository.save(customerOrder);
+
+        return toResponse(updatedOrder);
+    }
+
     private AppUser findUserByUsername(String username) {
         return appUserRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -139,7 +200,7 @@ public class OrderServiceImpl implements OrderService {
                 ));
     }
 
-    private void validateStock(List<CartItem> cartItems) {
+    private void validateCartStock(List<CartItem> cartItems) {
         cartItems.forEach(cartItem -> {
             Product product = cartItem.getProduct();
 
@@ -148,6 +209,28 @@ public class OrderServiceImpl implements OrderService {
                         "Requested quantity exceeds available stock for product: " + product.getName()
                 );
             }
+        });
+    }
+
+    private void validateOrderStock(List<OrderItem> orderItems) {
+        orderItems.forEach(orderItem -> {
+            Product product = orderItem.getProduct();
+
+            if (orderItem.getQuantity() > product.getStockQuantity()) {
+                throw new BadRequestException(
+                        "Requested quantity exceeds available stock for product: " + product.getName()
+                );
+            }
+        });
+    }
+
+    private void reduceProductStock(List<OrderItem> orderItems) {
+        orderItems.forEach(orderItem -> {
+            Product product = orderItem.getProduct();
+            int newStockQuantity = product.getStockQuantity() - orderItem.getQuantity();
+
+            product.setStockQuantity(newStockQuantity);
+            productRepository.save(product);
         });
     }
 
@@ -172,6 +255,10 @@ public class OrderServiceImpl implements OrderService {
                 .items(itemResponses)
                 .totalAmount(customerOrder.getTotalAmount())
                 .status(customerOrder.getStatus())
+                .paymentStatus(customerOrder.getPaymentStatus())
+                .paymentMethod(customerOrder.getPaymentMethod())
+                .paymentTransactionId(customerOrder.getPaymentTransactionId())
+                .paidAt(customerOrder.getPaidAt())
                 .shippingAddress(toShippingAddressResponse(customerOrder))
                 .createdAt(customerOrder.getCreatedAt())
                 .updatedAt(customerOrder.getUpdatedAt())

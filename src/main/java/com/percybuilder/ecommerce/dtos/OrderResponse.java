@@ -1,6 +1,8 @@
 package com.percybuilder.ecommerce.dtos;
 
 import com.percybuilder.ecommerce.models.OrderStatus;
+import com.percybuilder.ecommerce.models.PaymentMethod;
+import com.percybuilder.ecommerce.models.PaymentStatus;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -17,7 +19,13 @@ public class OrderResponse {
     private String username;
     private List<OrderItemResponse> items;
     private BigDecimal totalAmount;
+
     private OrderStatus status;
+    private PaymentStatus paymentStatus;
+    private PaymentMethod paymentMethod;
+    private String paymentTransactionId;
+    private LocalDateTime paidAt;
+
     private OrderShippingAddressResponse shippingAddress;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

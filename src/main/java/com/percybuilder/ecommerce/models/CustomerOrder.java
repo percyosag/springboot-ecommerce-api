@@ -40,6 +40,19 @@ public class CustomerOrder {
     @Column(nullable = false, length = 30)
     private OrderStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private PaymentStatus paymentStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private PaymentMethod paymentMethod;
+
+    @Column(length = 150)
+    private String paymentTransactionId;
+
+    private LocalDateTime paidAt;
+
     @Column(nullable = false, length = 150)
     private String shippingFullName;
 
@@ -80,6 +93,10 @@ public class CustomerOrder {
 
         if (status == null) {
             status = OrderStatus.PENDING;
+        }
+
+        if (paymentStatus == null) {
+            paymentStatus = PaymentStatus.PENDING;
         }
     }
 
