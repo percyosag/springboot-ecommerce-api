@@ -6,6 +6,11 @@ This project demonstrates a layered backend architecture for products, categorie
 
 ---
 
+## Live Demo
+
+Base API URL: https://springboot-ecommerce-api.onrender.com  
+API Docs / Testing: https://springboot-ecommerce-api.onrender.com/swagger-ui/index.html
+
 ## Features
 
 ### Product and Category Management
